@@ -1,0 +1,11 @@
+---
+### Baseサーバー基盤設定
+- name: ベースサーバ初期設定1
+  hosts: lepp
+  become: true
+  roles:
+    - role: ssh_setup
+      tags: role_ssh
+      when: ansible_virtualization_type != "docker" and ansible_virtualization_type != "container"
+    - role: common
+      tags: role_common

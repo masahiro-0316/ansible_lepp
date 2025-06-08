@@ -1,0 +1,8 @@
+---
+# vars file for postgresql
+
+### Gossテストファイル
+goss_test_dir: "/var/tmp/{{ role_name }}_gosstest"
+
+goss_test_files:
+ - { local_file: /usr/local/bin/goss, remote_file: "{{ goss_test_dir }}/goss", own: root, gro: root, mod: 755 }

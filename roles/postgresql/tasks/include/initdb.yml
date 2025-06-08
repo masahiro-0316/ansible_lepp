@@ -1,0 +1,58 @@
+---
+# tasks/include/initdb file for postgrasql
+
+- name: PostgraSQL初期化とサービス常駐化
+  block:
+    - name: PostgraSQLのDB初期化
+      ansible.builtin.command:
+        cmd: "/usr/pgsql-{{ pgsql_version }}/bin/postgresql-{{ pgsql_version }}-setup initdb"
+      args:
+        creates: "{{ pgsql_dir }}/{{ pgsql_version }}/data/PG_VERSION"
+      register: cmd_initdb
+      changed_when: cmd_initdb.rc != 0
+
+    - name: initdb logの成功確認
+      ansible.builtin.command:
+        cmd: grep -e "成功" -e "Success" {{ pgsql_initlog_path }}
+      register: check_initdb_log
+      changed_when: false
+
+    - name: initdb実行結果
+      ansible.builtin.debug:
+        var: check_initdb_log.stdout_lines
+
+    - name: postgresqlサービスを常駐起動
+      ansible.builtin.systemd:
+        name: "postgresql-{{ pgsql_version }}.service"
+        state: started
+        enabled: true
+
+  rescue:
+    - name: PostgraSQLのDB初期化
+      ansible.builtin.command:
+        cmd: "/usr/pgsql-{{ pgsql_version }}/bin/postgresql-{{ pgsql_version }}-setup initdb"
+      args:
+        creates: "{{ pgsql_dir }}/{{ pgsql_version }}/data/PG_VERSION"
+      register: cmd_initdb
+      changed_when: cmd_initdb.rc != 0
+
+    - name: initdb logの成功確認
+      ansible.builtin.command:
+        cmd: tail -5 {{ pgsql_initlog_path }}
+      register: check_initdb_log
+      changed_when: false
+      until: '"Success" in check_initdb_log.stdout or "成功" in check_initdb_log.stdout'
+      retries: 10
+      delay: 30
+      when: not ansible_check_mode
+
+    - name: initdb実行結果
+      ansible.builtin.debug:
+        var: check_initdb_log.stdout_lines
+
+    - name: postgresqlサービスを常駐起動
+      ansible.builtin.systemd:
+        name: "postgresql-{{ pgsql_version }}.service"
+        state: started
+        enabled: true
+      when: not ansible_check_mode

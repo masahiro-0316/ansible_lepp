@@ -1,0 +1,6 @@
+---
+# defaults file for postgresql
+
+pgsql_version: 16
+pgsql_dir: /var/lib/pgsql
+pgsql_initlog_path: "{{ pgsql_dir }}/{{ pgsql_version }}/initdb.log"

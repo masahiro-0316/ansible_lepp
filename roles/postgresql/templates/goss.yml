@@ -1,0 +1,32 @@
+package:
+    postgresql{{ pgsql_version }}:
+        installed: true
+    timescaledb-2-postgresql-{{ pgsql_version }}:
+        installed: true
+    python3-psycopg2:
+        installed: true
+service:
+  postgresql-{{ pgsql_version }}:
+    enabled: true
+    running: true
+user:
+  postgres:
+    exists: true
+    uid: 26
+    gid: 26
+    groups:
+    - postgres
+    home: /var/lib/pgsql
+    shell: /bin/bash
+command:
+  sudo -u postgres psql -c "select usename from pg_user;":
+    exit-status: 0
+    stdout:
+    - usename
+    - postgres
+  sudo -u postgres psql -c 'SELECT version();':
+    exit-status: 0
+    stdout:
+    - version
+    - PostgreSQL {{ pgsql_version }}
+ 

@@ -1,0 +1,12 @@
+---
+# vars/RedHat file for postgresql
+
+pgsql_repo: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{ ansible_distribution_major_version }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+timescaledb_repo_baseurl: "https://packagecloud.io/timescale/timescaledb/el/{{ ansible_distribution_major_version }}/$basearch"
+timescaledb_repo_gpgkey: "https://packagecloud.io/timescale/timescaledb/gpgkey"
+timescaledb_ssl_path: "/etc/pki/tls/certs/ca-bundle.crt"
+
+timedb2pgsql:
+ - "timescaledb-2-postgresql-{{ pgsql_version }}"
+ - python3-psycopg2
+# - "timescaledb-2-loader-postgresql-{{ pgsql_version }}"

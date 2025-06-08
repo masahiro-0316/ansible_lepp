@@ -1,0 +1,31 @@
+---
+# tasks file for postgresql
+
+### 事前タスク
+- name: setup OS varibleds
+  ansible.builtin.include_vars:
+    file: "{{ item }}"
+
+  with_first_found:
+    - "vars/{{ os_version }}.yml"
+    - "vars/{{ ansible_os_family }}.yml"
+### 事前タスク END
+
+### Postgrasqlインストール
+- name: Postgrasqlインストール
+  ansible.builtin.include_tasks:
+    file: "include/{{ os_version }}.yml"
+  tags: task_install
+
+### Postgrasqlの設定
+
+- name: Postgrasql データベース初期設定
+  ansible.builtin.include_tasks:
+    file: include/initdb.yml
+  tags: task_initdb
+
+### Postgrasqlインストールテスト
+- name: Postgrasql Gossる
+  ansible.builtin.include_tasks:
+    file: include/goss.yml
+  tags: task_goss

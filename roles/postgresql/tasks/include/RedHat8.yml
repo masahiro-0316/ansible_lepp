@@ -1,0 +1,64 @@
+---
+# tasks/include/RedHat file for postgrasql
+
+- name: PostgraSQLインストール
+  block:
+    - name: timescaleDB(postgrasql)をインストールする。
+      ansible.builtin.dnf:
+        name: "{{ timedb2pgsql }}"
+        state: present
+      register: pgsql_in
+
+    - name: timescaleDB(postgrasql)をインストール結果
+      ansible.builtin.debug:
+        var: pgsql_in.results
+
+  rescue:
+    - name: postgrasql のリポジトリ登録
+      ansible.builtin.dnf:
+        name: "{{ pgsql_repo }}"
+        state: present
+        disable_gpg_check: true
+      register: pgsql_repo_in
+
+    - name: postgrasqlリポジトリ登録結果
+      ansible.builtin.debug:
+        var: pgsql_repo_in.results
+
+    - name: timescale用のリポジトリ登録
+      ansible.builtin.yum_repository:
+        name: "timescale_timescaledb"
+        description: timescale_timescaledb
+        baseurl: "{{ timescaledb_repo_baseurl }}"
+        repo_gpgcheck: true
+        gpgcheck: false
+        enabled: true
+        gpgkey: "{{ timescaledb_repo_gpgkey }}"
+        sslverify: true
+        sslcacert: "{{ timescaledb_ssl_path }}"
+        metadata_expire: 300
+        file: timescale_timescaledb
+      register: timedb_repo_in
+
+    - name: yum-clean-metadata
+      ansible.builtin.command:
+        cmd: yum clean metadata
+      register: yum_clean
+      changed_when: yum_clean.rc != 0
+
+    - name: PostgraSQLモジュールを無効化
+      ansible.builtin.command:
+        cmd: dnf -qy module disable postgresql
+      register: dnf_module_dis
+      changed_when: dnf_module_dis.rc != 0
+
+    - name: timescaleDB(postgrasql)をインストールする。
+      ansible.builtin.dnf:
+        name: "{{ timedb2pgsql }}"
+        state: present
+      register: pgsql_in
+      when: not ansible_check_mode
+
+    - name: timescaleDB(postgrasql)をインストール結果
+      ansible.builtin.debug:
+        var: pgsql_in.results
