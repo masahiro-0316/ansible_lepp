@@ -1,6 +1,6 @@
 # LEPP環境自動構築用 Ansible Playbook
 
-このリポジトリは、Linux サーバー上に Nginx・MariaDB・PHP-FPM からなる LEPP スタックを構築するための Ansible プレイブック集です。各種ロールや変数ファイルを利用して、環境の初期設定からミドルウェアの導入、自己署名証明書の発行まで自動化します。
+このリポジトリは、Linux サーバー上に Nginx・PostgreSQL・PHP-FPM からなる LEPP スタックを構築するための Ansible プレイブック集です。各種ロールや変数ファイルを利用して、環境の初期設定からミドルウェアの導入、自己署名証明書の発行まで自動化します。
 
 ## 構成
 
@@ -11,9 +11,9 @@
     - セキュリティアップデートのみ実行します。  
     - 何らかのアップデートが実行された場合は、OS再起動が実行されます。
     - 上記の２つが不要な場合は、`site.yml`から削除するかコメントアウトして下さい。
-  - `4th_lemp.yml` ― LEPP 関連のロールを適用します。
+  - `4th_lepp.yml` ― LEPP 関連のロールを適用します。
     - LEPP環境の作動確認のため`adminer`の設定ロールが組み込まれています。
-    - `adminer`への接続URL:`https://<サーバIP、ホスト名>/adminer**`
+    - `adminer`への接続URL:`https://<サーバIP、ホスト名>/adminer`
     - 本プレイブックを使用してLEPP環境だけ作成したい場合は、`adminer`ロールは削除してしまって問題ありません。
 - **inventory**
   - `inventory/localhost.ini` ― ローカル環境向け設定。
@@ -23,12 +23,14 @@
 
 ### インストールソフトウェアのバージョン指定
 
-`MariaDB`と`PHP`のバージョンは以下の変数で指定しています。
+`PostgreSQL`と`PHP`のバージョンは以下の変数で指定しています。
 
 | ロール名            | 変数名             | 説明                      | デフォルト値 |
 | --------------- | --------------- | ----------------------- | ------ |
-| `roles/postgaresql` | `postgaresql_Ver`   | インストールする MariaDB のバージョン | `10.3` |
+| `roles/postgaresql` | `pgsql_version`   | インストールする MariaDB のバージョン | `16` |
 | `roles/php_fpm` | `php_version`   | インストールする PHP のバージョン     | `8.2`  |
+
+`PostgreSQL`は`timescaledb`と合わせてインストール実行されます。
 
 ## 検証実施済み環境
 
@@ -129,7 +131,7 @@ Vagrantイメージを使用して以下のOSへの実行検証済みとなり�
   - MariaDB root パスワード(`postgaresql_root_pass`)が記載してあります。
   - Ansibleのログインユーザ(`ansible_ssh_user`)
   - Ansibleのログインユーザパスワード(`ansible_become_pass:`)
-- `lemp/nginx.yml`
+- `lepp/nginx.yml`
   - Nginx 用 TLS 設定をまとめており、証明書の格納先ディレクトリや `server_subject_alt_name` といった項目を管理します。
 - `vagrant/*.yml`
   - Vagrant 環境での接続ユーザーやパスワード

@@ -1,131 +1,70 @@
-ロール名
+postgresql
 =========
 
-PostgreSQLのインストール
+PostgreSQL サーバをインストールし、初期化・設定を行い、最後に Goss で基本動作検証を行います。
 
-必要条件
+要件
 ------------
+
+- Ansible 2.9 以上  
+- 対象ホストが RedHat 系ディストリビューション（EL8, EL9, Rocky8 など）  
+- 制御ノードに Goss バイナリが `/usr/local/bin/goss` に配置されていること  
+- 対象ホストがインターネット接続可能、または PGDG リポジトリ RPM（`pgsql_repo`）をダウンロード可能であること  
+- systemd が利用可能であること  
 
 ロール変数
 --------------
 
-依存関係
-------------
+**defaults/main.yml**
 
-- PostgreSQL 14
-- Rocky 8
+| 変数名               | 説明                                                      | デフォルト値                                        |
+| -------------------- | --------------------------------------------------------- | --------------------------------------------------- |
+| `pgsql_version`      | インストールする PostgreSQL のバージョン                   | `16`                                                |
+| `pgsql_dir`          | PostgreSQL データディレクトリのベースパス                  | `/var/lib/pgsql`                                    |
+| `pgsql_initlog_path` | `initdb` 実行ログファイルのパス                           | `{{ pgsql_dir }}/{{ pgsql_version }}/initdb.log`   |
+
+**vars/RedHat.yml**
+
+| 変数名                        | 説明                                                      | デフォルト値                                                                                                            |
+| ----------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `pgsql_repo`                  | PGDG 公式 YUM リポジトリ RPM の URL                        | `https://download.postgresql.org/pub/repos/yum/repor...{{ ansible_distribution_major_version }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm` |
+| `timescaledb_repo_baseurl`    | TimescaleDB リポジトリのベース URL                         | `https://packagecloud.io/timescale/timescaledb/el/{{ ansible_distribution_major_version }}/$basearch`                    |
+| `timescaledb_repo_gpgkey`     | TimescaleDB リポジトリの GPG キー URL                      | `https://packagecloud.io/timescale/timescaledb/gpgkey`                                                                  |
+| `timescaledb_ssl_path`        | SSL 証明書バンドルのパス                                   | `/etc/pki/tls/certs/ca-bundle.crt`                                                                                     |
+| `timedb2pgsql`                | インストールする TimescaleDB と Psycopg2 のパッケージ名リスト | `['timescaledb-2-postgresql-{{ pgsql_version }}', 'python3-psycopg2']`                                                   |
+
+**vars/main.yml**
+
+| 変数名            | 説明                                              | デフォルト値                             |
+| ----------------- | ------------------------------------------------- | ---------------------------------------- |
+| `goss_test_dir`   | Goss テスト用に一時的にファイルを配置するディレクトリ | `/var/tmp/{{ role_name }}_gosstest`      |
+| `goss_test_files` | Goss テストに用いるファイル情報（src, dest, owner 等） | 下記のリスト参照                          |
+
+```yaml
+goss_test_files:
+  - local_file: /usr/local/bin/goss
+    remote_file: "{{ goss_test_dir }}/goss"
+    own: root
+    gro: root
+    mod: 755
+````
+
+## 依存関係
 
 なし
 
-使用例のPlaybook
-----------------
+## サンプル Playbook
 
-ライセンス
--------
-
-著者情報
-------------------
-
-PostgreSQL手動インストール
----------
-
-1. postgrasql のリポジトリ登録
-
-```bash
-sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-$(rpm -E %{rhel})-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+```yaml
+- hosts: db_servers
+  become: true
+  roles:
+    - role: postgresql
+      pgsql_version: 13
+      pgsql_dir: /data/pgsql
 ```
 
-timescale用のリポジトリ登録
+## ライセンス
 
-```bash
-sudo tee /etc/yum.repos.d/timescale_timescaledb.repo <<EOL
-[timescale_timescaledb]
-name=timescale_timescaledb
-baseurl=https://packagecloud.io/timescale/timescaledb/el/$(rpm -E %{rhel})/\$basearch
-repo_gpgcheck=1
-gpgcheck=0
-enabled=1
-gpgkey=https://packagecloud.io/timescale/timescaledb/gpgkey
-sslverify=1
-sslcacert=/etc/pki/tls/certs/ca-bundle.crt
-metadata_expire=300
-EOL
-```
-
-リポジトリを更新
-```bash
-sudo dnf check-update -y
-```
-
-1. データベースインストール
-
-timescaleDB(postgrasql)をインストールする。
-
-```bash
-sudo dnf install -y timescaledb-2-postgresql-14
-```
-> 失敗する場合は一度以下のコマンドを実行する
-> ```bash
-> sudo dnf -qy module disable postgresql 
-> ```
-
-データベースの初期化
-```bash
-sudo /usr/pgsql-14/bin/postgresql-14-setup initdb
-```
-実行結果
-
-```bash
-Initializing database ...
-OK
-```
-
-1. データベース初期後の確認
-
-データベース初期設定のログを確認する
-
-```bash
-sudo cat /var/lib/pgsql/14/initdb.log
-```
-
-サービスを起動してステータスを確認
-
-```bsah
-sudo systemctl enable --now postgresql-14.service
-sudo systemctl status postgresql-14.service
-```
-
-`active`になっていることを確認
-
-```bash
-● postgresql-14.service - PostgreSQL 14 database server
-   Loaded: loaded (/usr/lib/systemd/system/postgresql-14.service; enabled; vendor preset: disabled)
-   Active: active (running) since Fri 2024-03-15 22:36:29 JST; 4s ago
-     Docs: https://www.postgresql.org/docs/14/static/
-  Process: 134414 ExecStartPre=/usr/pgsql-14/bin/postgresql-14-check-db-dir ${PGDATA} (code=exited, status=0/SUCCESS)
- Main PID: 134419 (postmaster)
-    Tasks: 8 (limit: 23129)
-   Memory: 16.8M
-   CGroup: /system.slice/postgresql-14.service
- 
-````
-
-postgresユーザへの切り替え
-
-```bash
-sudo su - postgres
-```
-
-PostgraSQLの作動確認
-
-データベースユーザーの確認
-
-```bash
-psql -c "select usename from pg_user;"
-```
-
-データベースの確認
-
-```bash
-psql -l 
-```
+This role is licensed under the Apache License, Version 2.0.
+See [LICENSE](../../LICENSE) for details.

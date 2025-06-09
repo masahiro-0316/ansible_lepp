@@ -19,7 +19,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.actor}}/ansible-test:latest
+      image: ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}-test:latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Python 3.12 & pip
@@ -38,6 +38,6 @@ jobs:
       - name: Install Ansible tools
         run: pip3.12 install -r pip_ansible_requirements.txt
       - name: Syntax check
-        run: ansible-playbook -i inventory site.yml --syntax-check
+        run: ansible-playbook -i inventory/localhost.ini site.yml --syntax-check
       - name: Run ansible-lint
         run: ansible-lint -c .ansible-lint -v --show-relpath site.yml group_vars/* host_vars/* inventory/*
