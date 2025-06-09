@@ -8,4 +8,3 @@ db_user: "postgres"
 db_passwd: "passwd/123"
 cidr_allow: "127.0.0.1/32"         # 必要に応じて限定
 pgsql_dir: /var/lib/pgsql
-
