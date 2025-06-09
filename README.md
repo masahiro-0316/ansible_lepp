@@ -30,6 +30,8 @@
 | `roles/postgaresql` | `pgsql_version`   | インストールする MariaDB のバージョン | `16` |
 | `roles/php_fpm` | `php_version`   | インストールする PHP のバージョン     | `8.2`  |
 
+`PostgreSQL`は`timescaledb`と合わせてインストール実行されます。
+
 ## 検証実施済み環境
 
 Ansible実行環境
